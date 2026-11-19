@@ -1,0 +1,4 @@
+[
+  {"readingQualityType": "TEST.ESTIMATED", "description": "Synthetic: estimated value"},
+  {"readingQualityType": "TEST.NOT_READ", "description": "Synthetic: value not read"}
+]

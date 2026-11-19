@@ -1,0 +1,5 @@
+[
+  {"naziv": "Prejeta 15 minutna delovna energija", "opis": "15 minutna energija, A+, kWh", "oznaka": "A+", "perioda": "15 min", "readingType": "32.0.2.4.1.2.12.0.0.0.0.0.0.0.0.3.72.0", "readingTypeBrezObracuna": "0.0.2.4.1.2.12.0.0.0.0.0.0.0.0.3.72.0", "readingTypeObracun": "8.0.2.4.1.2.12.0.0.0.0.0.0.0.0.3.72.0", "tip": "delovna prejem", "vrsta": "KOLICINA"},
+  {"naziv": "Oddana 15 minutna delovna energija", "opis": "15 minutna energija, A-, kWh", "oznaka": "A-", "perioda": "15 min", "readingType": "32.0.2.4.19.2.12.0.0.0.0.0.0.0.0.3.72.0", "readingTypeBrezObracuna": "0.0.2.4.19.2.12.0.0.0.0.0.0.0.0.3.72.0", "readingTypeObracun": "8.0.2.4.19.2.12.0.0.0.0.0.0.0.0.3.72.0", "tip": "delovna oddaja", "vrsta": "KOLICINA"},
+  {"naziv": "Prejeta delovna energija ET", "opis": "24 urno stanje, A+, kWh, T0", "oznaka": "A+_T0", "perioda": "24 h", "readingType": "32.0.4.1.1.2.12.0.0.0.0.0.0.0.0.3.72.0", "tip": "delovna prejem ET", "vrsta": "STANJE"}
+]

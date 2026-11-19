@@ -1,0 +1,27 @@
+{
+  "entity": {
+    "sensor": {
+      "import_latest_interval": { "default": "mdi:transmission-tower-import" },
+      "import_latest_average_power": { "default": "mdi:flash-triangle-outline" },
+      "import_latest_day": { "default": "mdi:calendar-today" },
+      "import_current_month": { "default": "mdi:calendar-month" },
+      "import_previous_month": { "default": "mdi:calendar-arrow-left" },
+      "export_latest_interval": { "default": "mdi:transmission-tower-export" },
+      "export_latest_average_power": { "default": "mdi:flash-triangle-outline" },
+      "export_latest_day": { "default": "mdi:calendar-today" },
+      "export_current_month": { "default": "mdi:calendar-month" },
+      "export_previous_month": { "default": "mdi:calendar-arrow-left" },
+      "latest_reading": { "default": "mdi:clock-check-outline" },
+      "last_refresh": { "default": "mdi:cloud-check-outline" },
+      "data_age": { "default": "mdi:timer-sand" },
+      "current_month_coverage": { "default": "mdi:chart-donut" },
+      "backfill": { "default": "mdi:database-arrow-down" }
+    },
+    "button": {
+      "refresh": { "default": "mdi:refresh" }
+    }
+  },
+  "services": {
+    "refresh_range": { "service": "mdi:database-refresh" }
+  }
+}

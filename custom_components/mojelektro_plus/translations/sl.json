@@ -1,0 +1,165 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Moj Elektro Plus",
+        "description": "Žeton API ustvarite v Moj Elektro pod Moj profil → Kreiraj žeton. Identifikator merilnega mesta (EIMM) najdete pod Merilna mesta. Meritve so na voljo z zamikom, običajno naslednji dan.",
+        "data": {
+          "api_token": "Žeton API",
+          "meter_id": "Merilno mesto (EIMM)",
+          "name": "Ime (neobvezno)",
+          "history_months": "Uvoz zgodovine (celotni koledarski meseci)",
+          "refresh_hours": "Interval osveževanja (ure)",
+          "sidebar": "Prikaži stran Moj Elektro v stranski vrstici"
+        },
+        "data_description": {
+          "api_token": "Shranjen v konfiguraciji Home Assistanta; nikoli ni poslan v brskalnik.",
+          "meter_id": "Na primer 4-93571.",
+          "history_months": "Največ 24. API vrača največ dve leti zgodovine; prenos poteka v ozadju.",
+          "refresh_hours": "Najmanj 1 ura. Meritve so objavljene z zamikom (običajno naslednji dan), zato pogostejše osveževanje ne prinese sprotnih podatkov.",
+          "sidebar": "Ena skupna stran za vsa merilna mesta."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Zamenjaj žeton Moj Elektro",
+        "description": "Žeton za merilno mesto {meter_id} ne deluje več. Vnesite novega.",
+        "data": {
+          "api_token": "Žeton API"
+        }
+      },
+      "reconfigure": {
+        "title": "Ponovna nastavitev",
+        "description": "Vnesite nov žeton ali pustite prazno za obstoječega. Merilnega mesta ni mogoče spremeniti; za drugo merilno mesto dodajte nov vnos.",
+        "data": {
+          "api_token": "Žeton API",
+          "meter_id": "Merilno mesto (EIMM)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Žeton API je bil zavrnjen. V Moj Elektro ustvarite nov žeton (Moj profil → Kreiraj žeton).",
+      "meter_inaccessible": "S tem žetonom ni dostopa do merilnega mesta ali pa merilno mesto ne obstaja.",
+      "invalid_meter_id": "Vnesite identifikator merilnega mesta (EIMM) v obliki 4-93571.",
+      "invalid_request": "Moj Elektro je zavrnil parametre zahteve.",
+      "timeout": "Moj Elektro se ni odzval pravočasno. Poskusite znova pozneje.",
+      "rate_limited": "Moj Elektro omejuje število zahtev. Počakajte nekaj minut in poskusite znova.",
+      "service_error": "Moj Elektro je vrnil napako ali nepričakovan odgovor. Poskusite znova pozneje.",
+      "cannot_connect": "Povezava z Moj Elektro ni mogoča.",
+      "unknown": "Nepričakovana napaka."
+    },
+    "abort": {
+      "already_configured": "To merilno mesto je že nastavljeno.",
+      "reauth_successful": "Žeton je posodobljen.",
+      "reconfigure_successful": "Nastavitve so posodobljene.",
+      "meter_mismatch": "Ta vnos pripada drugemu merilnemu mestu. Namesto tega dodajte nov vnos."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti Moj Elektro Plus",
+        "data": {
+          "history_months": "Uvoz zgodovine (celotni koledarski meseci)",
+          "refresh_hours": "Interval osveževanja (ure)",
+          "sidebar": "Prikaži stran Moj Elektro v stranski vrstici"
+        },
+        "data_description": {
+          "history_months": "Največ 24. API vrača največ dve leti zgodovine; prenos poteka v ozadju.",
+          "refresh_hours": "Najmanj 1 ura. Meritve so objavljene z zamikom (običajno naslednji dan), zato pogostejše osveževanje ne prinese sprotnih podatkov.",
+          "sidebar": "Ena skupna stran za vsa merilna mesta."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "import_latest_interval": {
+        "name": "Zadnji interval – prejeta energija"
+      },
+      "import_latest_average_power": {
+        "name": "Povprečna moč zadnjega intervala – prejeta (z zamikom)"
+      },
+      "import_latest_day": {
+        "name": "Zadnji celotni dan – prejeta energija"
+      },
+      "import_current_month": {
+        "name": "Ta mesec – prejeta energija (delno)"
+      },
+      "import_previous_month": {
+        "name": "Prejšnji mesec – prejeta energija"
+      },
+      "export_latest_interval": {
+        "name": "Zadnji interval – oddana energija"
+      },
+      "export_latest_average_power": {
+        "name": "Povprečna moč zadnjega intervala – oddana (z zamikom)"
+      },
+      "export_latest_day": {
+        "name": "Zadnji celotni dan – oddana energija"
+      },
+      "export_current_month": {
+        "name": "Ta mesec – oddana energija (delno)"
+      },
+      "export_previous_month": {
+        "name": "Prejšnji mesec – oddana energija"
+      },
+      "latest_reading": {
+        "name": "Zadnja razpoložljiva meritev"
+      },
+      "last_refresh": {
+        "name": "Zadnja uspešna osvežitev"
+      },
+      "data_age": {
+        "name": "Starost podatkov"
+      },
+      "current_month_coverage": {
+        "name": "Pokritost podatkov ta mesec"
+      },
+      "backfill": {
+        "name": "Prenos zgodovine",
+        "state": {
+          "idle": "Mirovanje",
+          "running": "V teku",
+          "complete": "Končano",
+          "error": "Napaka"
+        }
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Osveži"
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_loaded": {
+      "message": "Ta vnos Moj Elektro Plus ni naložen."
+    },
+    "invalid_range": {
+      "message": "Končni datum je pred začetnim."
+    },
+    "busy": {
+      "message": "Za to merilno mesto že poteka prenos ali pa je obdobje zunaj razpoložljive zgodovine."
+    }
+  },
+  "services": {
+    "refresh_range": {
+      "name": "Osveži obdobje",
+      "description": "Ponovno prenese meritve za obdobje (dnevi po času Europe/Ljubljana, vključno z obema datumoma), da zajame popravke. Omejeno na zadnji dve leti.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Merilno mesto",
+          "description": "Vnos Moj Elektro Plus."
+        },
+        "start_date": {
+          "name": "Začetni datum",
+          "description": "Prvi dan."
+        },
+        "end_date": {
+          "name": "Končni datum",
+          "description": "Zadnji dan (vključno)."
+        }
+      }
+    }
+  }
+}

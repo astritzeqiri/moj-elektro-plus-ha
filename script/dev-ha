@@ -1,0 +1,44 @@
+#!/bin/sh
+# Local development Home Assistant for Moj Elektro Plus (never production).
+#   script/dev-ha start | stop | logs | restart | recreate
+# Real API by default. MOJELEKTRO_DEV_FAKE=1 additionally mounts and enables
+# the synthetic-data helper (never use it with a real token).
+# Uses its own container, port and config directory under .local/ so other
+# local Home Assistant instances are never touched.
+set -e
+cd "$(dirname "$0")/.."
+NAME=mojelektro-plus-homeassistant
+PORT=18124
+IMAGE=ghcr.io/home-assistant/home-assistant@sha256:c6c1ca9931036bf3a2c4cc088d8db25dfea3b33935a5ecc83c40349462e2f69e
+CONFIG="$PWD/.local/homeassistant/config"
+case "${1:-start}" in
+  start)
+    mkdir -p "$CONFIG"
+    [ -f "$CONFIG/configuration.yaml" ] || printf 'default_config:\nlogger:\n  default: info\n  logs:\n    custom_components.mojelektro_plus: debug\n' > "$CONFIG/configuration.yaml"
+    FAKE_MOUNT=""
+    if [ "${MOJELEKTRO_DEV_FAKE:-0}" = "1" ]; then
+      grep -q '^mojelektro_dev_fake:' "$CONFIG/configuration.yaml" || printf 'mojelektro_dev_fake:\n' >> "$CONFIG/configuration.yaml"
+      FAKE_MOUNT="-v $PWD/script/dev/mojelektro_dev_fake:/config/custom_components/mojelektro_dev_fake:ro"
+    else
+      sed -i.bak '/^mojelektro_dev_fake:/d' "$CONFIG/configuration.yaml" && rm -f "$CONFIG/configuration.yaml.bak"
+    fi
+    if docker ps -a --format '{{.Names}}' | grep -qx "$NAME"; then
+      docker start "$NAME" >/dev/null
+    else
+      docker run -d --name "$NAME" -p 127.0.0.1:$PORT:8123 \
+        -e TZ=America/New_York \
+        -v "$CONFIG":/config \
+        -v "$PWD/custom_components/mojelektro_plus":/config/custom_components/mojelektro_plus:ro \
+        $FAKE_MOUNT \
+        --log-opt max-size=10m --log-opt max-file=3 \
+        "$IMAGE" >/dev/null
+    fi
+    echo "Waiting for http://127.0.0.1:$PORT ..."
+    i=0; until curl -s -o /dev/null "http://127.0.0.1:$PORT/manifest.json"; do i=$((i+1)); [ $i -gt 90 ] && exit 1; sleep 2; done
+    echo "Ready: http://127.0.0.1:$PORT" ;;
+  stop) docker stop "$NAME" ;;
+  restart) docker restart "$NAME" >/dev/null && echo restarted ;;
+  recreate) docker rm -f "$NAME" >/dev/null 2>&1 || true; exec "$0" start ;;
+  logs) docker logs --tail 100 "$NAME" ;;
+  *) echo "usage: $0 start|stop|restart|recreate|logs"; exit 2 ;;
+esac

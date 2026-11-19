@@ -1,0 +1,4 @@
+# Test harness pinned to a Home Assistant release (2026.10.x).
+pytest-homeassistant-custom-component==0.13.375
+ruff==0.14.5
+home-assistant-frontend==20260930.5

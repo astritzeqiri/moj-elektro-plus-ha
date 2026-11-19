@@ -1,0 +1,9 @@
+{
+  "identifikator": {"enotniIdentifikatorMerilnegaMesta": "9-12345", "gsrn": "000000000000000001"},
+  "merilneTocke": [{"gsrn": "000000000000000002", "vrsta": "OMTO"}],
+  "naziv": "REDACTED",
+  "naslov": "REDACTED",
+  "lastnik": {"naziv": "REDACTED", "naslov": "REDACTED"},
+  "pogodbeniPodatki": {"obstoj15MinutneMeritve": true, "daljinskoCitanje": true, "prikljucnaMoc": 7, "steviloFaz": 3},
+  "tehnicniPodatki": {"tipStevca": "TEST-METER"}
+}

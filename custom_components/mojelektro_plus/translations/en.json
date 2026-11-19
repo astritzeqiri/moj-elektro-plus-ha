@@ -1,0 +1,165 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Moj Elektro Plus",
+        "description": "Create an API token in Moj Elektro under Moj profil → Kreiraj žeton. The meter identifier (EIMM) is listed under Merilna mesta. Readings are delayed, usually until the next day.",
+        "data": {
+          "api_token": "API token",
+          "meter_id": "Meter ID (EIMM)",
+          "name": "Friendly name (optional)",
+          "history_months": "Historical import (complete calendar months)",
+          "refresh_hours": "Refresh interval (hours)",
+          "sidebar": "Show the Moj Elektro sidebar page"
+        },
+        "data_description": {
+          "api_token": "Stored in Home Assistant's configuration storage, never sent to the browser.",
+          "meter_id": "For example 4-93571.",
+          "history_months": "Up to 24. The API serves at most two years of history; it is downloaded in the background.",
+          "refresh_hours": "Minimum 1 hour. Readings are published with a delay (usually the next day), so frequent polling does not make them live.",
+          "sidebar": "One shared page for all meters."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Replace the Moj Elektro token",
+        "description": "The token for meter {meter_id} no longer works. Enter a new one.",
+        "data": {
+          "api_token": "API token"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure",
+        "description": "Enter a new token, or leave it empty to keep the current one. The meter cannot be changed; add another entry for another meter.",
+        "data": {
+          "api_token": "API token",
+          "meter_id": "Meter ID (EIMM)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The API token was rejected. Create a new token in Moj Elektro (Moj profil → Kreiraj žeton).",
+      "meter_inaccessible": "This token cannot access that meter, or the meter does not exist.",
+      "invalid_meter_id": "Enter the meter identifier (EIMM) in the form 4-93571.",
+      "invalid_request": "Moj Elektro rejected the request parameters.",
+      "timeout": "Moj Elektro did not respond in time. Try again later.",
+      "rate_limited": "Moj Elektro is rate limiting requests. Wait a few minutes and try again.",
+      "service_error": "Moj Elektro returned an error or an unexpected response. Try again later.",
+      "cannot_connect": "Cannot connect to Moj Elektro.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This meter is already configured.",
+      "reauth_successful": "The token was updated.",
+      "reconfigure_successful": "The configuration was updated.",
+      "meter_mismatch": "This entry belongs to a different meter. Add a new entry instead."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Moj Elektro Plus options",
+        "data": {
+          "history_months": "Historical import (complete calendar months)",
+          "refresh_hours": "Refresh interval (hours)",
+          "sidebar": "Show the Moj Elektro sidebar page"
+        },
+        "data_description": {
+          "history_months": "Up to 24. The API serves at most two years of history; it is downloaded in the background.",
+          "refresh_hours": "Minimum 1 hour. Readings are published with a delay (usually the next day), so frequent polling does not make them live.",
+          "sidebar": "One shared page for all meters."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "import_latest_interval": {
+        "name": "Latest interval imported energy"
+      },
+      "import_latest_average_power": {
+        "name": "Latest interval average import power (delayed)"
+      },
+      "import_latest_day": {
+        "name": "Latest complete day imported energy"
+      },
+      "import_current_month": {
+        "name": "This month imported energy (partial)"
+      },
+      "import_previous_month": {
+        "name": "Last month imported energy"
+      },
+      "export_latest_interval": {
+        "name": "Latest interval exported energy"
+      },
+      "export_latest_average_power": {
+        "name": "Latest interval average export power (delayed)"
+      },
+      "export_latest_day": {
+        "name": "Latest complete day exported energy"
+      },
+      "export_current_month": {
+        "name": "This month exported energy (partial)"
+      },
+      "export_previous_month": {
+        "name": "Last month exported energy"
+      },
+      "latest_reading": {
+        "name": "Latest available reading"
+      },
+      "last_refresh": {
+        "name": "Last successful refresh"
+      },
+      "data_age": {
+        "name": "Data age"
+      },
+      "current_month_coverage": {
+        "name": "This month data coverage"
+      },
+      "backfill": {
+        "name": "History download",
+        "state": {
+          "idle": "Idle",
+          "running": "Running",
+          "complete": "Complete",
+          "error": "Error"
+        }
+      }
+    },
+    "button": {
+      "refresh": {
+        "name": "Refresh"
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_loaded": {
+      "message": "That Moj Elektro Plus entry is not loaded."
+    },
+    "invalid_range": {
+      "message": "The end date is before the start date."
+    },
+    "busy": {
+      "message": "Another download is already running for this meter, or the range is outside the available history."
+    }
+  },
+  "services": {
+    "refresh_range": {
+      "name": "Refresh range",
+      "description": "Re-download readings for a date range (Europe/Ljubljana days, both inclusive) to pick up corrections. Limited to the last two years.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Meter",
+          "description": "The Moj Elektro Plus entry."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "First day."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "Last day (inclusive)."
+        }
+      }
+    }
+  }
+}

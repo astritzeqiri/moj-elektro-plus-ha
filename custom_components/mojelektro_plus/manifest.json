@@ -1,0 +1,15 @@
+{
+  "domain": "mojelektro_plus",
+  "name": "Moj Elektro Plus",
+  "after_dependencies": ["recorder"],
+  "codeowners": ["@astritzeqiri"],
+  "config_flow": true,
+  "dependencies": ["frontend", "http", "panel_custom", "websocket_api"],
+  "documentation": "https://github.com/astritzeqiri/moj-elektro-plus-ha",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/astritzeqiri/moj-elektro-plus-ha/issues",
+  "loggers": ["custom_components.mojelektro_plus"],
+  "requirements": [],
+  "version": "0.1.0"
+}

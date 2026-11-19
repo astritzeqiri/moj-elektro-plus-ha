@@ -1,0 +1,9 @@
+{
+  "domain": "mojelektro_dev_fake",
+  "name": "Moj Elektro Plus dev fake API (development only)",
+  "codeowners": [],
+  "documentation": "https://github.com/astritzeqiri/moj-elektro-plus-ha",
+  "iot_class": "calculated",
+  "requirements": [],
+  "version": "0.0.0"
+}

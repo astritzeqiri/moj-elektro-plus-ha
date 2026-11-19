@@ -1,0 +1,15 @@
+refresh_range:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: mojelektro_plus
+    start_date:
+      required: true
+      selector:
+        date:
+    end_date:
+      required: true
+      selector:
+        date:

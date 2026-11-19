@@ -1,0 +1,10 @@
+#!/bin/sh
+# Run a command inside a Linux Python 3.14 container with the test venv.
+# Usage: script/docker-test pytest -q    |    script/docker-test ruff check .
+set -e
+cd "$(dirname "$0")/.."
+docker volume create mojelektro-plus-testenv >/dev/null
+exec docker run --rm -v mojelektro-plus-testenv:/venv -v "$PWD":/repo -w /repo \
+  -e PYTHONDONTWRITEBYTECODE=1 python:3.14-slim sh -c '
+    [ -x /venv/bin/pytest ] || { python -m venv /venv && /venv/bin/pip install -q -r requirements_test.txt; }
+    PATH=/venv/bin:$PATH exec "$@"' sh "$@"
