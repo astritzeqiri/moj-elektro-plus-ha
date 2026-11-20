@@ -219,7 +219,7 @@ Install the new version from **Settings → Marketplace → Moj Elektro Plus** (
 
 - [Report a bug or request a feature](https://github.com/astritzeqiri/moj-elektro-plus-ha/issues)
 - [Releases](https://github.com/astritzeqiri/moj-elektro-plus-ha/releases) · [changelog](CHANGELOG.md)
-- [Development guide](docs/DEVELOPMENT.md) · [Release process](docs/RELEASING.md)
+- [Development guide](docs/DEVELOPMENT.md) · [Release process](docs/RELEASING.md) · [Contributor and agent guide](AGENTS.md)
 
 ## Credits
 
