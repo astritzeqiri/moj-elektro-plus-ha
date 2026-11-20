@@ -27,7 +27,9 @@ function niceMax(value) {
 export function renderChart(opts) {
   const { points, resolution, mode, width, height, active, label, fmt } = opts;
   const factor = resolution === "interval" && mode === "power" ? 4 : 1;
-  const hasExport = points.some((p) => p.export !== undefined && p.export !== null);
+  // Only draw the export half when something was exported: a register that
+  // reports zero everywhere would otherwise take up half of the chart.
+  const hasExport = points.some((p) => p.export > 0);
   const imports = points.map((p) => (p.import == null ? null : p.import * factor));
   const exports = points.map((p) => (p.export == null ? null : p.export * factor));
   const maxUp = niceMax(Math.max(0, ...imports.filter((v) => v != null)));

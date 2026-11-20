@@ -160,6 +160,9 @@ The integration adds two statistics per meter, at the hours the energy was measu
 
 Go to **Settings → Dashboards → Energy**, add a grid connection, and choose "*name* imported energy" for consumption and "*name* exported energy" for return to grid.
 
+> [!TIP]
+> The Energy dashboard opens on **today**, which stays empty because Moj Elektro publishes readings a day or more later. Use the **‹** arrow at the bottom to go back a day, or the **⋮** menu to switch to a week, month or year.
+
 When Moj Elektro adds or corrects readings, the affected hours are rewritten, so restarts and repeated downloads never count anything twice. The Energy dashboard groups days by Home Assistant's own timezone, while the sidebar page uses Europe/Ljubljana days.
 
 ## Costs

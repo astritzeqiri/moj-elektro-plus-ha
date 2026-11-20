@@ -11,9 +11,9 @@ export function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-export function numberFormatter(lang, digits = 2) {
+export function numberFormatter(lang, digits = 2, minDigits = 0) {
   const nf = new Intl.NumberFormat(lang === "sl" ? "sl-SI" : "en-GB", {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: minDigits,
     maximumFractionDigits: digits,
   });
   return (v) => (v == null || Number.isNaN(v) ? "—" : nf.format(v));
@@ -53,4 +53,20 @@ export function formatDay(lang, day, opts = { day: "numeric", month: "short" }) 
 
 export function formatMonth(lang, day) {
   return formatDay(lang, day, { month: "short", year: "numeric" });
+}
+
+/** "3 – 9 Nov 2026" style range for plain YYYY-MM-DD days. */
+export function formatRange(lang, start, end) {
+  const toDate = (day) => {
+    const [y, m, d] = day.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d));
+  };
+  const fmt = new Intl.DateTimeFormat(locale(lang), {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  if (typeof fmt.formatRange === "function") return fmt.formatRange(toDate(start), toDate(end));
+  return `${fmt.format(toDate(start))} – ${fmt.format(toDate(end))}`;
 }

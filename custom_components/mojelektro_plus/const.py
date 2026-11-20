@@ -6,7 +6,7 @@ from datetime import timedelta
 from typing import Final
 
 DOMAIN: Final = "mojelektro_plus"
-VERSION: Final = "0.1.0"
+VERSION: Final = "0.2.0"
 NAME: Final = "Moj Elektro Plus"
 
 API_BASE_URL: Final = "https://api.informatika.si/mojelektro/v1"

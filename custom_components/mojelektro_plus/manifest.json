@@ -11,5 +11,5 @@
   "issue_tracker": "https://github.com/astritzeqiri/moj-elektro-plus-ha/issues",
   "loggers": ["custom_components.mojelektro_plus"],
   "requirements": [],
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

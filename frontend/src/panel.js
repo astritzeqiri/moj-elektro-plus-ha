@@ -5,19 +5,24 @@
 import { renderChart } from "./chart.js";
 import {
   PRESETS,
+  addDays,
+  addMonths,
   isValidDate,
   ljubljanaToday,
   presetRange,
   spanDays,
+  stepRange,
 } from "./dates.js";
 import {
   escapeHtml as e,
   formatDateTime,
   formatDay,
   formatMonth,
+  formatRange,
   formatTime,
   numberFormatter,
 } from "./format.js";
+import { ICONS, icon } from "./icons.js";
 import { language, translator } from "./i18n.js";
 import { STYLES } from "./styles.js";
 
@@ -25,6 +30,14 @@ const DOMAIN = "mojelektro_plus";
 const STORAGE_KEY = "mojelektro_plus.selected_meter";
 const RETRY_MS = 3000;
 const MAX_START_RETRIES = 40;
+const PRESET_UNITS = {
+  latest: { unit: "day", n: 1 },
+  last7: { unit: "day", n: 7 },
+  last30: { unit: "day", n: 30 },
+  thisMonth: { unit: "month", n: 1 },
+  prevMonth: { unit: "month", n: 1 },
+  last12: { unit: "month", n: 12 },
+};
 const STARTING_CODES = new Set(["unknown_command", "not_found"]);
 
 function readStoredMeter() {
@@ -231,6 +244,33 @@ export class MojElektroPanel extends HTMLElement {
     s.preset = preset;
     s.start = range.start;
     s.end = range.end;
+    s.unit = PRESET_UNITS[preset];
+    s.customOpen = false;
+    s.active = null;
+    this._loadData();
+  }
+
+  /** Limits for stepping: never before the API's history, never past data. */
+  _stepBounds() {
+    const s = this._state;
+    if (!s.start) return { prev: false, next: false };
+    const today = ljubljanaToday();
+    const meter = this._meter;
+    const last = s.unit?.unit === "month" ? today : meter?.latest_day || today;
+    const first = meter?.earliest_allowed || "0000-01-01";
+    return { prev: s.start > first, next: s.end < last, first, last };
+  }
+
+  _step(dir) {
+    const s = this._state;
+    const bounds = this._stepBounds();
+    if ((dir < 0 && !bounds.prev) || (dir > 0 && !bounds.next)) return;
+    const unit = s.unit || { unit: "day", n: spanDays(s.start, s.end) };
+    const range = stepRange(s.start, s.end, unit, dir, bounds.last);
+    s.start = range.start;
+    s.end = range.end;
+    s.unit = unit;
+    s.preset = "custom";
     s.active = null;
     this._loadData();
   }
@@ -276,6 +316,12 @@ export class MojElektroPanel extends HTMLElement {
     const action = target.dataset.action;
     const s = this._state;
     if (action === "preset") this._applyPreset(target.dataset.preset);
+    else if (action === "step") this._step(Number(target.dataset.dir));
+    else if (action === "custom") {
+      s.customOpen = !s.customOpen;
+      this._render();
+      if (s.customOpen) this.shadowRoot.getElementById("start")?.focus();
+    }
     else if (action === "apply-range") this._applyCustom();
     else if (action === "retry") s.status === "error" ? this._init() : this._loadData();
     else if (action === "refresh") this._refresh(false);
@@ -344,6 +390,7 @@ export class MojElektroPanel extends HTMLElement {
     s.preset = "custom";
     s.start = start;
     s.end = end;
+    s.unit = { unit: "day", n: spanDays(start, end) };
     s.notice = null;
     s.active = null;
     this._loadData();
@@ -399,8 +446,8 @@ export class MojElektroPanel extends HTMLElement {
 
   // -------------------------------------------------------------- rendering
 
-  _fmt(digits = 2) {
-    return numberFormatter(this._lang, digits);
+  _fmt(digits = 2, minDigits = 0) {
+    return numberFormatter(this._lang, digits, minDigits);
   }
 
   _pointLabel(p, short = true) {
@@ -449,7 +496,7 @@ export class MojElektroPanel extends HTMLElement {
       slot.appendChild(menu);
       this._menu = menu;
     } else {
-      slot.innerHTML = `<button class="icon" data-action="menu" aria-label="${e(this._t("menu"))}">☰</button>`;
+      slot.innerHTML = `<button class="icon-btn" data-action="menu" aria-label="${e(this._t("menu"))}">${icon(ICONS.menu)}</button>`;
     }
   }
 
@@ -458,35 +505,79 @@ export class MojElektroPanel extends HTMLElement {
     const s = this._state;
     const meter = this._meter;
     const admin = !!this._hass?.user?.is_admin;
+    const multi = s.meters.length > 1;
+    const custom = s.preset === "custom";
     return `
-      <section class="controls card" aria-label="${e(t("range"))}">
-        <label class="field">${e(t("meter"))}
-          <select id="meter">${s.meters
-            .map(
-              (m) =>
-                `<option value="${e(m.entry_id)}" ${m.entry_id === s.entryId ? "selected" : ""}>${e(m.title)}</option>`,
-            )
-            .join("")}</select>
-        </label>
+      <section class="controls" aria-label="${e(t("range"))}">
+        ${
+          multi
+            ? `<label class="meter-pick"><span class="visually-hidden">${e(t("meter"))}</span>
+                <select id="meter">${s.meters
+                  .map(
+                    (m) =>
+                      `<option value="${e(m.entry_id)}" ${m.entry_id === s.entryId ? "selected" : ""}>${e(m.title)}</option>`,
+                  )
+                  .join("")}</select></label>`
+            : ""
+        }
         <div class="presets" role="group" aria-label="${e(t("range"))}">
           ${PRESETS.map(
             (p) =>
               `<button class="chip" data-action="preset" data-preset="${p}" aria-pressed="${s.preset === p}">${e(t(`presets.${p}`))}</button>`,
           ).join("")}
+          <button class="chip" data-action="custom" aria-expanded="${!!s.customOpen}" aria-controls="custom-fields" aria-pressed="${custom}">${e(t("presets.custom"))}</button>
         </div>
-        <div class="custom">
+        <div class="custom-fields" id="custom-fields" ${s.customOpen ? "" : "hidden"}>
           <label class="field">${e(t("from"))}<input id="start" type="date" value="${e(s.start)}" min="${e(meter?.earliest_allowed || "")}"></label>
           <label class="field">${e(t("to"))}<input id="end" type="date" value="${e(s.end)}"></label>
           <button data-action="apply-range">${e(t("apply"))}</button>
         </div>
       </section>
-      ${this._statusCard(meter, admin)}
       ${s.notice ? `<div class="banner ${s.notice.kind === "error" ? "warn" : "info"}" role="status">${e(s.notice.text)}</div>` : ""}
+      ${this._periodHeader(meter, admin, multi)}
       ${this._dataSection(meter, admin)}
+      ${this._statusLine(meter, admin)}
       <p class="foot">${e(t("timezoneNote"))} ${e(t("costNote"))}</p>`;
   }
 
-  _statusCard(meter, admin) {
+  _periodLabel() {
+    const s = this._state;
+    if (!s.start) return "";
+    if (s.start === s.end)
+      return formatDay(this._lang, s.start, { weekday: "short", day: "numeric", month: "long", year: "numeric" });
+    if (s.start.endsWith("-01") && s.end === addDays(addMonths(s.start, 1), -1))
+      return formatDay(this._lang, s.start, { month: "long", year: "numeric" });
+    return formatRange(this._lang, s.start, s.end);
+  }
+
+  _periodHeader(meter, admin, multi) {
+    const t = this._t;
+    const s = this._state;
+    const nav = this._stepBounds();
+    return `
+      <section class="period" aria-label="${e(t("range"))}">
+        <div class="period-row">
+          <div class="period-title">
+            <button class="icon-btn" data-action="step" data-dir="-1" aria-label="${e(t("previousPeriod"))}" ${nav.prev ? "" : "disabled"}>${icon(ICONS.chevronLeft)}</button>
+            <h2 id="period-heading" aria-live="polite">${e(this._periodLabel())}</h2>
+            <button class="icon-btn" data-action="step" data-dir="1" aria-label="${e(t("nextPeriod"))}" ${nav.next ? "" : "disabled"}>${icon(ICONS.chevronRight)}</button>
+          </div>
+          <div class="period-actions">
+            ${admin ? `<button class="text-btn" data-action="refresh">${icon(ICONS.refresh)}<span>${e(t("refresh"))}</span></button>` : ""}
+            <button class="text-btn" data-action="csv" ${s.data ? "" : "disabled"}>${icon(ICONS.download)}<span>${e(t("exportCsv"))}</span></button>
+          </div>
+        </div>
+        ${
+          meter
+            ? `<p class="meter-name">${multi ? "" : `${e(meter.title)} · `}${e(t("latestMeasurement"))} ${
+                meter.latest_reading ? e(formatDateTime(this._lang, meter.latest_reading)) : "—"
+              } (${e(t("delayedTitle").toLowerCase())})</p>`
+            : ""
+        }
+      </section>`;
+  }
+
+  _statusLine(meter, admin) {
     const t = this._t;
     if (!meter) return "";
     const b = meter.backfill || {};
@@ -498,14 +589,16 @@ export class MojElektroPanel extends HTMLElement {
         <progress max="${job.total}" value="${job.done}" aria-label="${e(t("backfill"))}"></progress></div>`;
     } else if (b.state === "error") {
       progress = `<div class="progress warn">${e(t("backfillError", { error: b.error || "" }))}
-        ${admin ? `<button data-action="backfill">${e(t("backfillRetry"))}</button>` : ""}</div>`;
+        ${admin ? `<button class="text-btn" data-action="backfill">${e(t("backfillRetry"))}</button>` : ""}</div>`;
     } else if (b.state === "complete") {
-      progress = `<div class="progress ok">${e(t("backfillComplete"))}</div>`;
+      progress = `<div class="progress ok">${icon(ICONS.check)}<span>${e(t("backfillComplete"))}</span></div>`;
     }
     return `
-      <section class="card status" aria-label="${e(t("delayedTitle"))}">
-        <div class="delayed"><strong>${e(t("delayedTitle"))}</strong> — ${e(t("delayedText"))}</div>
-        <dl>
+      <section class="status" aria-label="${e(t("delayedTitle"))}">
+        <div class="delayed">${icon(ICONS.clock)}
+          <p><strong>${e(t("delayedTitle"))}</strong> — ${e(t("delayedText"))}</p>
+        </div>
+        <dl class="facts">
           <div><dt>${e(t("latestMeasurement"))}</dt><dd>${meter.latest_reading ? e(formatDateTime(this._lang, meter.latest_reading)) : "—"}</dd></div>
           <div><dt>${e(t("lastRefresh"))}</dt><dd>${meter.last_success ? e(formatDateTime(this._lang, meter.last_success)) : e(t("never"))}</dd></div>
         </dl>
@@ -513,11 +606,9 @@ export class MojElektroPanel extends HTMLElement {
         <div class="actions">
           ${
             admin
-              ? `<button data-action="refresh">${e(t("refresh"))}</button>
-                 <button data-action="refresh-range" class="secondary">${e(t("refreshRange"))}</button>`
+              ? `<button class="text-btn" data-action="refresh-range">${icon(ICONS.history)}<span>${e(t("refreshRange"))}</span></button>`
               : `<span class="muted">${e(t("adminOnly"))}</span>`
           }
-          <button data-action="csv" class="secondary" ${this._state.data ? "" : "disabled"}>${e(t("exportCsv"))}</button>
         </div>
       </section>`;
   }
@@ -532,16 +623,22 @@ export class MojElektroPanel extends HTMLElement {
     const d = s.data;
     const sum = d.summary;
     const hasAny = d.points.some((p) => p.import != null);
-    const fmt = this._fmt(2);
+    // Totals keep two decimals so figures line up and do not jump in width.
+    const fmt = this._fmt(2, 2);
     const imp = sum.import;
-    const exportCard = (() => {
-      if (d.export_status !== "available")
-        return `<div class="stat"><span class="label">${e(t("exported"))}</span><span class="value small">${e(t(d.export_status === "not_provided" ? "exportNotProvided" : "exportUnknown"))}</span></div>`;
-      return `<div class="stat"><span class="label">${e(t("exported"))}</span><span class="value">${fmt(sum.export?.total)} <small>${t("kwh")}</small></span></div>`;
-    })();
+    const multiDay = (sum.days || 1) > 1;
+    const exportValue =
+      d.export_status !== "available"
+        ? `<span class="quiet">${e(t(d.export_status === "not_provided" ? "exportNotProvided" : "exportUnknown"))}</span>`
+        : `${fmt(sum.export?.total)} <small>${t("kwh")}</small>`;
     const peak = sum.peak
-      ? `${this._fmt(3)(sum.peak.power_kw)} <small>${t("kw")}</small><span class="sub">${e(formatDateTime(this._lang, sum.peak.interval_end))}</span>`
+      ? `${this._fmt(2, 2)(sum.peak.power_kw)} <small>${t("kw")}</small><span class="sub">${e(t("at"))} ${e(
+          multiDay ? formatDateTime(this._lang, sum.peak.interval_end) : formatTime(this._lang, sum.peak.interval_end),
+        )}</span>`
       : "—";
+    const completeness = imp.complete
+      ? `<span class="pill ok">${e(t("complete"))}</span>`
+      : `<span class="pill partial">${e(t("partial"))} · ${this._fmt(1)(imp.coverage)} %</span>`;
     const error = s.error
       ? `<div class="banner warn" role="alert">${e(s.error)} <button data-action="retry">${e(t("retry"))}</button></div>`
       : "";
@@ -551,16 +648,27 @@ export class MojElektroPanel extends HTMLElement {
     const empty = !hasAny
       ? `<div class="state">${e(meter?.backfill?.state === "running" || meter?.job ? t("noDataBackfill") : t("noData"))}</div>`
       : "";
+    const showExport = d.points.some((p) => p.export > 0);
     return `
       ${error}
-      <section class="stats ${s.dataLoading ? "loading" : ""}" aria-live="polite">
-        <div class="stat"><span class="label">${e(t("imported"))}</span><span class="value">${fmt(imp.total)} <small>${t("kwh")}</small></span>
-          <span class="sub">${imp.complete ? e(t("complete")) : `<span class="badge">${e(t("partial"))}</span>`}</span></div>
-        ${exportCard}
-        <div class="stat"><span class="label">${e(t("dailyAverage"))}</span><span class="value">${fmt(sum.daily_average)} <small>${t("kwh")}</small></span><span class="sub">${e(t("dailyAverageHint"))}</span></div>
-        <div class="stat"><span class="label">${e(t("peak"))}</span><span class="value">${peak}</span></div>
-        <div class="stat"><span class="label">${e(t("coverage"))}</span><span class="value">${this._fmt(1)(imp.coverage)} <small>%</small></span>
-          <span class="sub">${imp.flagged ? e(t("flagged", { n: imp.flagged })) : e(t("noFlagged"))}</span></div>
+      <section class="summary ${s.dataLoading ? "loading" : ""}" aria-live="polite" aria-labelledby="period-heading">
+        <div class="total">
+          <span class="total-label">${e(t("imported"))}</span>
+          <span class="total-value">${fmt(imp.total)} <small>${t("kwh")}</small></span>
+          <span class="total-meta">${completeness}
+            <span class="quiet">${e(t("readings", { present: imp.present, expected: imp.expected }))}${
+              imp.flagged ? ` · ${e(t("flagged", { n: imp.flagged }))}` : ""
+            }</span></span>
+        </div>
+        <dl class="figures">
+          <div><dt>${e(t("exported"))}</dt><dd>${exportValue}</dd></div>
+          ${
+            multiDay
+              ? `<div><dt>${e(t("dailyAverage"))}</dt><dd>${fmt(sum.daily_average)} <small>${t("kwh")}</small><span class="sub">${e(t("dailyAverageHint"))}</span></dd></div>`
+              : ""
+          }
+          <div><dt>${e(t("peak"))}</dt><dd>${peak}</dd></div>
+        </dl>
       </section>
       <section class="card chart-card ${s.dataLoading ? "loading" : ""}">
         <div class="chart-head">
@@ -568,7 +676,7 @@ export class MojElektroPanel extends HTMLElement {
           <div class="chart-tools">
             ${
               d.resolution === "interval"
-                ? `<div role="group" class="seg">
+                ? `<div role="group" class="seg" aria-label="${e(chartTitle)}">
                     <button class="chip" data-action="mode" data-mode="energy" aria-pressed="${s.mode === "energy"}">${e(t("energy"))}</button>
                     <button class="chip" data-action="mode" data-mode="power" aria-pressed="${s.mode === "power"}">${e(t("power"))}</button>
                   </div>`
@@ -584,7 +692,7 @@ export class MojElektroPanel extends HTMLElement {
         </div>
         <div class="legend">
           <span><i class="sw import"></i>${e(t("imported"))}</span>
-          ${d.export_status === "available" ? `<span><i class="sw export"></i>${e(t("exported"))}</span>` : ""}
+          ${showExport ? `<span><i class="sw export"></i>${e(t("exported"))}</span>` : ""}
           <span><i class="sw flagged"></i>${e(t("flaggedLegend"))}</span>
           <span><i class="sw missing"></i>${e(t("missing"))}</span>
         </div>

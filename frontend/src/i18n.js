@@ -72,6 +72,9 @@ const en = {
   kwh: "kWh",
   kw: "kW",
   at: "at",
+  previousPeriod: "Previous period",
+  nextPeriod: "Next period",
+  readings: "{present} of {expected} readings",
 };
 
 const sl = {
@@ -146,6 +149,9 @@ const sl = {
   kwh: "kWh",
   kw: "kW",
   at: "ob",
+  previousPeriod: "Prejšnje obdobje",
+  nextPeriod: "Naslednje obdobje",
+  readings: "{present} od {expected} meritev",
 };
 
 const STRINGS = { en, sl };

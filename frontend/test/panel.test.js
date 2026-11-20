@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "../src/panel.js";
-import { presetRange, isValidDate, ljubljanaToday } from "../src/dates.js";
+import { presetRange, isValidDate, ljubljanaToday, stepRange } from "../src/dates.js";
 import { renderChart } from "../src/chart.js";
 import { translator, STRINGS } from "../src/i18n.js";
 
@@ -213,6 +213,8 @@ describe("interaction", () => {
     expect(last).toMatchObject({ start: "2026-03-11", end: "2026-04-09" });
     expect(root.textContent).toContain("Daily totals");
 
+    root.querySelector("[data-action=custom]").click();
+    expect(root.querySelector("#custom-fields").hidden).toBe(false);
     root.querySelector("#start").value = "2026-03-01";
     root.querySelector("#end").value = "2026-03-05";
     root.querySelector("[data-action=apply-range]").click();
@@ -319,6 +321,32 @@ describe("interaction", () => {
   });
 });
 
+describe("period stepping", () => {
+  it("steps day by day and never past the latest data", async () => {
+    const { root, calls } = await mount();
+    expect(root.querySelector("#period-heading").textContent).toContain("2026");
+    const next = root.querySelector('[data-action=step][data-dir="1"]');
+    expect(next.disabled).toBe(true);
+    root.querySelector('[data-action=step][data-dir="-1"]').click();
+    await flush();
+    const last = calls.filter((c) => c.type.endsWith("/data")).at(-1);
+    expect(last).toMatchObject({ start: "2026-04-08", end: "2026-04-08" });
+    expect(root.querySelector('[data-action=step][data-dir="1"]').disabled).toBe(false);
+  });
+
+  it("steps whole calendar months for month presets", async () => {
+    const { root, calls } = await mount();
+    root.querySelector('[data-preset="prevMonth"]').click();
+    await flush();
+    root.querySelector('[data-action=step][data-dir="-1"]').click();
+    await flush();
+    const last = calls.filter((c) => c.type.endsWith("/data")).at(-1);
+    const months = last.end.slice(0, 7);
+    expect(last.start.endsWith("-01")).toBe(true);
+    expect(last.start.slice(0, 7)).toBe(months);
+  });
+});
+
 describe("helpers", () => {
   it("resolves presets from the latest available day", () => {
     expect(presetRange("latest", "2026-04-09", "2026-04-10")).toEqual({ start: "2026-04-09", end: "2026-04-09" });
@@ -327,6 +355,14 @@ describe("helpers", () => {
     expect(presetRange("prevMonth", "2026-04-09", "2026-04-10")).toEqual({ start: "2026-03-01", end: "2026-03-31" });
     expect(presetRange("last12", "2026-04-09", "2026-04-10")).toEqual({ start: "2025-05-01", end: "2026-04-10" });
     expect(presetRange("latest", null, "2026-01-01")).toEqual({ start: "2025-12-31", end: "2025-12-31" });
+  });
+
+  it("steps ranges by day span and by calendar month", () => {
+    expect(stepRange("2026-04-03", "2026-04-09", { unit: "day", n: 7 }, -1, "2026-04-09")).toEqual({ start: "2026-03-27", end: "2026-04-02" });
+    expect(stepRange("2026-03-27", "2026-04-02", { unit: "day", n: 7 }, 1, "2026-04-05")).toEqual({ start: "2026-03-30", end: "2026-04-05" });
+    expect(stepRange("2026-04-01", "2026-04-10", { unit: "month", n: 1 }, -1, "2026-04-10")).toEqual({ start: "2026-03-01", end: "2026-03-31" });
+    expect(stepRange("2026-02-01", "2026-02-28", { unit: "month", n: 1 }, 1, "2026-04-10")).toEqual({ start: "2026-03-01", end: "2026-03-31" });
+    expect(stepRange("2026-03-01", "2026-03-31", { unit: "month", n: 1 }, 1, "2026-04-10")).toEqual({ start: "2026-04-01", end: "2026-04-10" });
   });
 
   it("validates dates and computes Ljubljana today", () => {

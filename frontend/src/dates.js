@@ -75,3 +75,28 @@ export function presetRange(preset, latestDay, today) {
 export function spanDays(start, end) {
   return Math.round((parse(end) - parse(start)) / 86400000) + 1;
 }
+
+function minDate(a, b) {
+  return a < b ? a : b;
+}
+
+/**
+ * Move a range one step back (dir -1) or forward (dir 1).
+ * Month steps snap to whole calendar months; day steps keep the span.
+ * Forward steps never run past `last` (the latest day with data).
+ */
+export function stepRange(start, end, unit, dir, last) {
+  if (unit.unit === "month") {
+    const from = monthStart(start);
+    if (dir < 0) {
+      const nextStart = addMonths(from, -unit.n);
+      return { start: nextStart, end: addDays(from, -1) };
+    }
+    const nextStart = addMonths(from, unit.n);
+    return { start: nextStart, end: minDate(addDays(addMonths(nextStart, unit.n), -1), last) };
+  }
+  const span = unit.n || spanDays(start, end);
+  if (dir < 0) return { start: addDays(start, -span), end: addDays(start, -1) };
+  const nextEnd = minDate(addDays(end, span), last);
+  return { start: addDays(nextEnd, -(span - 1)), end: nextEnd };
+}
